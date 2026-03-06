@@ -8,7 +8,7 @@ See `role.md` for the full job description. Every feature should map back to the
 1. Daily press clips digest — `press_digest.py` (BUILT)
 2. Rapid-response monitoring — `rapid_response.py` (BUILT)
 3. Briefing generator — `briefing_generator.py` (BUILT)
-4. Internal comms workflow tool — NOT YET BUILT
+4. Internal comms workflow tool — `internal_comms.py` (BUILT)
 5. Message pull-through tracker — `pull_through_tracker.py` (BUILT)
 6. Comms Automation Playbook — `playbook/` (DRAFT)
 
@@ -31,6 +31,7 @@ python scripts/run_press_digest.py
 python scripts/run_rapid_response.py
 python scripts/run_briefing.py
 python scripts/run_pull_through.py
+python scripts/run_internal_comms.py
 python evals/eval_runner.py
 python -m unittest discover -s tests -p 'test_*.py'
 ```

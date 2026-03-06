@@ -81,3 +81,23 @@ class BriefingRequest:
     topics: list[str]
     key_messages: list[str]
     recent_coverage: list[Article] = field(default_factory=list)
+
+
+@dataclass
+class ContentReview:
+    tone_score: int  # 1-10
+    clarity_score: int  # 1-10
+    alignment_score: int  # 1-10
+    sensitivity_flags: list[str]
+    suggested_edits: list[str]
+    approval_recommendation: str  # "approve", "revise", "escalate"
+    rationale: str
+
+
+@dataclass
+class InternalCommsResult:
+    content_type: str  # "all_hands", "faq", "leadership_message"
+    subject: str
+    draft: str
+    review: ContentReview
+    formatted_outputs: dict[str, str] = field(default_factory=dict)  # channel -> formatted text

@@ -1,5 +1,5 @@
 # ABOUTME: Thin wrapper around the Anthropic SDK for structured Claude calls.
-# ABOUTME: Provides article analysis, event assessment, and briefing generation.
+# ABOUTME: Provides article analysis, event assessment, briefing generation, and internal comms workflows.
 from __future__ import annotations
 
 import json
@@ -381,3 +381,240 @@ Recent relevant coverage:
         ],
     )
     return message.content[0].text
+
+
+# ---------------------------------------------------------------------------
+# Internal comms: draft, review, format
+# ---------------------------------------------------------------------------
+
+DRAFT_SYSTEM_PROMPT = """You are a senior internal communications writer at Anthropic. You draft content for all-hands updates, FAQs, and leadership messages.
+
+Your writing should be:
+- Authentic to the author's voice — executives at Anthropic are direct, thoughtful, and honest
+- Transparent about challenges — employees see through spin, so acknowledge difficulties plainly
+- Concise — busy employees scan, so use clear headers and short paragraphs
+- Sensitive to confidential matters — flag language that could be problematic if leaked
+
+Content types:
+- all_hands: Company-wide update from leadership. Structured with clear sections, forward-looking.
+- faq: Q&A format anticipating employee questions. Direct, honest answers.
+- leadership_message: Personal communication from an executive. More conversational tone.
+
+Always write as if this content could appear on the front page of the New York Times tomorrow. Internal comms at high-profile AI companies frequently leak."""
+
+DRAFT_FAQ_SYSTEM_PROMPT = """You are a senior internal communications writer at Anthropic. You draft FAQ documents that anticipate employee questions.
+
+Your FAQs should:
+- Anticipate the hardest questions employees will ask — don't just cover softballs
+- Give direct, honest answers — employees see through corporate deflection
+- Address emotional concerns (job security, company reputation) alongside factual ones
+- Include a "what we don't know yet" section when appropriate
+- Be concise — 2-4 sentences per answer
+
+Write as if this FAQ could appear on the front page of the New York Times tomorrow."""
+
+
+CONTENT_REVIEW_TOOL = {
+    "name": "record_content_review",
+    "description": "Record a structured review of internal communications content.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "tone_score": {
+                "type": "integer",
+                "description": "1-10 score for tone appropriateness. 10 = perfectly calibrated for audience and context; 1 = severely off-tone.",
+            },
+            "clarity_score": {
+                "type": "integer",
+                "description": "1-10 score for clarity and readability. 10 = crystal clear; 1 = confusing or jargon-heavy.",
+            },
+            "alignment_score": {
+                "type": "integer",
+                "description": "1-10 score for alignment with the stated key points and messaging goals. 10 = all points covered faithfully; 1 = off-message.",
+            },
+            "sensitivity_flags": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Specific phrases or sections that could be problematic if leaked, misinterpreted, or that touch sensitive topics inappropriately. Empty array if none.",
+            },
+            "suggested_edits": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Concrete, actionable edit suggestions. Each should specify what to change and why.",
+            },
+            "approval_recommendation": {
+                "type": "string",
+                "enum": ["approve", "revise", "escalate"],
+                "description": "approve = ready to send; revise = needs edits before sending; escalate = contains sensitive content requiring leadership/legal sign-off.",
+            },
+            "rationale": {
+                "type": "string",
+                "description": "2-3 sentence summary of the review findings and recommendation.",
+            },
+        },
+        "required": [
+            "tone_score",
+            "clarity_score",
+            "alignment_score",
+            "sensitivity_flags",
+            "suggested_edits",
+            "approval_recommendation",
+            "rationale",
+        ],
+    },
+}
+
+REVIEW_SYSTEM_PROMPT = """You are a communications review editor at Anthropic. You review internal content before it's distributed to employees.
+
+Your review should evaluate:
+1. TONE: Is the content appropriately calibrated for the audience? Too corporate? Too casual? Appropriately empathetic about difficult topics?
+2. CLARITY: Is the content easy to scan and understand? Are there jargon or ambiguities?
+3. ALIGNMENT: Does the content faithfully cover the stated key points? Are any points missing or misrepresented?
+4. SENSITIVITY: Could any phrases be damaging if leaked? Are sensitive topics handled with appropriate care?
+
+Recommendation guidelines:
+- approve: Content is ready to distribute. Minor imperfections are acceptable.
+- revise: Content has specific issues that should be fixed before distribution. Always include concrete edit suggestions.
+- escalate: Content touches on legal, regulatory, or reputational matters that need leadership or legal review before distribution.
+
+Be constructive but honest. A weak all-hands message from the CEO is worse than a delayed one."""
+
+
+def draft_internal_content(request: dict[str, Any], retries: int = 2) -> str:
+    """Generate a draft of internal communications content."""
+    content_type = request["content_type"]
+    system = DRAFT_FAQ_SYSTEM_PROMPT if content_type == "faq" else DRAFT_SYSTEM_PROMPT
+
+    key_points_text = "\n".join(f"- {p}" for p in request["key_points"])
+    sensitive_text = "\n".join(f"- {s}" for s in request.get("sensitive_topics", []))
+    channels_text = ", ".join(request.get("distribution_channels", ["email"]))
+
+    user_prompt = f"""Draft a {content_type.replace('_', ' ')} communication:
+
+Subject: {request['subject']}
+Author: {request.get('author', 'Communications Team')}
+Audience: {request.get('audience', 'All employees')}
+Desired tone: {request.get('tone', 'professional and transparent')}
+
+Key points to cover:
+{key_points_text}
+
+Sensitive topics to handle carefully:
+{sensitive_text}
+
+Context:
+{request.get('context', '')}
+
+Distribution channels: {channels_text}"""
+
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=2000,
+                system=system,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            return message.content[0].text
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error drafting content (attempt %d): %s", attempt + 1, e)
+                continue
+            raise
+    raise last_err
+
+
+def review_internal_content(
+    draft: str,
+    request: dict[str, Any],
+    retries: int = 2,
+) -> dict[str, Any]:
+    """Review a draft of internal communications content for tone, clarity, and sensitivity."""
+    key_points_text = "\n".join(f"- {p}" for p in request["key_points"])
+    sensitive_text = "\n".join(f"- {s}" for s in request.get("sensitive_topics", []))
+
+    user_prompt = f"""Review this internal communications draft:
+
+CONTENT TYPE: {request['content_type'].replace('_', ' ')}
+SUBJECT: {request['subject']}
+AUDIENCE: {request.get('audience', 'All employees')}
+DESIRED TONE: {request.get('tone', 'professional and transparent')}
+
+KEY POINTS THAT SHOULD BE COVERED:
+{key_points_text}
+
+SENSITIVE TOPICS TO HANDLE CAREFULLY:
+{sensitive_text}
+
+---
+
+DRAFT TO REVIEW:
+{draft}"""
+
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=800,
+                system=REVIEW_SYSTEM_PROMPT,
+                tools=[CONTENT_REVIEW_TOOL],
+                tool_choice={"type": "tool", "name": "record_content_review"},
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            for block in message.content:
+                if block.type == "tool_use":
+                    return block.input
+            raise RuntimeError("Claude did not return a tool_use block for content review")
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error reviewing content (attempt %d): %s", attempt + 1, e)
+                continue
+            raise
+    raise last_err
+
+
+FORMAT_SYSTEM_PROMPT = """You are a communications formatter at Anthropic. You adapt internal content for specific distribution channels.
+
+Channel formatting rules:
+- slack: Use Slack mrkdwn syntax. Break into digestible blocks. Use *bold* for headers, bullet points for lists. Keep total length under 3000 characters. Add a tl;dr at the top.
+- email: Use clean HTML-safe plain text. Include a subject line. Professional but warm formatting. Full content with proper paragraphs.
+
+Preserve the content faithfully — formatting changes only, no substantive edits."""
+
+
+def format_for_channel(
+    content: str,
+    channel: str,
+    subject: str,
+    retries: int = 2,
+) -> str:
+    """Format internal communications content for a specific distribution channel."""
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=2000,
+                system=FORMAT_SYSTEM_PROMPT,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Format this content for the '{channel}' channel:\n\nSubject: {subject}\n\n---\n\n{content}",
+                    }
+                ],
+            )
+            return message.content[0].text
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error formatting for %s (attempt %d): %s", channel, attempt + 1, e)
+                continue
+            raise
+    raise last_err

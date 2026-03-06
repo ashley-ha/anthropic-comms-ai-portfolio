@@ -13,7 +13,13 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-from comms_ai_portfolio.claude_client import analyze_article, analyze_pull_through, assess_event
+from comms_ai_portfolio.claude_client import (
+    analyze_article,
+    analyze_pull_through,
+    assess_event,
+    draft_internal_content,
+    review_internal_content,
+)
 
 
 def run_article_eval(data_path: Path) -> dict[str, Any]:
@@ -182,6 +188,65 @@ def run_pull_through_eval(data_path: Path, messages_path: Path) -> dict[str, Any
     return {"metrics": metrics, "details": results}
 
 
+def run_internal_comms_eval(data_path: Path) -> dict[str, Any]:
+    """Evaluate Claude's internal comms drafting and review against human labels.
+
+    Metrics:
+    - recommendation_accuracy: % where approval_recommendation is in expected set
+    - tone_floor_pass_rate: % where tone_score >= labeled minimum
+    - clarity_floor_pass_rate: % where clarity_score >= labeled minimum
+    - alignment_floor_pass_rate: % where alignment_score >= labeled minimum
+    - sensitivity_detection_accuracy: % where sensitivity flags match expectation
+    """
+    with data_path.open("r", encoding="utf-8") as f:
+        cases = json.load(f)
+
+    results = []
+    for case in cases:
+        labels = case.pop("labels")
+        draft = draft_internal_content(case)
+        review = review_internal_content(draft, case)
+        results.append({
+            "subject": case["subject"],
+            "content_type": case["content_type"],
+            "predicted": review,
+            "labeled": labels,
+        })
+
+    n = len(results)
+    rec_correct = sum(
+        1 for r in results
+        if r["predicted"]["approval_recommendation"] in r["labeled"]["expected_recommendation"]
+    )
+    tone_pass = sum(
+        1 for r in results
+        if r["predicted"]["tone_score"] >= r["labeled"]["min_tone_score"]
+    )
+    clarity_pass = sum(
+        1 for r in results
+        if r["predicted"]["clarity_score"] >= r["labeled"]["min_clarity_score"]
+    )
+    alignment_pass = sum(
+        1 for r in results
+        if r["predicted"]["alignment_score"] >= r["labeled"]["min_alignment_score"]
+    )
+    sensitivity_correct = sum(
+        1 for r in results
+        if (len(r["predicted"].get("sensitivity_flags", [])) > 0) == r["labeled"]["should_flag_sensitivity"]
+    )
+
+    metrics = {
+        "total_cases": n,
+        "recommendation_accuracy": round(rec_correct / n, 3) if n else 0,
+        "tone_floor_pass_rate": round(tone_pass / n, 3) if n else 0,
+        "clarity_floor_pass_rate": round(clarity_pass / n, 3) if n else 0,
+        "alignment_floor_pass_rate": round(alignment_pass / n, 3) if n else 0,
+        "sensitivity_detection_accuracy": round(sensitivity_correct / n, 3) if n else 0,
+    }
+
+    return {"metrics": metrics, "details": results}
+
+
 def print_report(name: str, result: dict[str, Any]) -> None:
     """Pretty-print an eval report to stdout."""
     print(f"\n{'=' * 60}")
@@ -213,6 +278,14 @@ def print_report(name: str, result: dict[str, Any]) -> None:
         elif "event_id" in detail:
             match = "PASS" if detail["predicted_tier"] == detail["labeled_tier"] else "FAIL"
             print(f"    [{match}] {detail['event_id']}: predicted={detail['predicted_tier']} labeled={detail['labeled_tier']}")
+        elif "content_type" in detail and "predicted" in detail and "labeled" in detail:
+            pred = detail["predicted"]
+            lab = detail["labeled"]
+            rec_ok = pred["approval_recommendation"] in lab["expected_recommendation"]
+            match = "PASS" if rec_ok else "FAIL"
+            print(f"    [{match}] {detail['subject'][:50]}")
+            print(f"          recommendation: {pred['approval_recommendation']} (expected: {lab['expected_recommendation']})")
+            print(f"          scores: tone={pred['tone_score']} clarity={pred['clarity_score']} alignment={pred['alignment_score']}")
 
     print(f"\n{'=' * 60}\n")
 
@@ -235,6 +308,12 @@ if __name__ == "__main__":
     )
     print_report("Pull-Through Tracker — Message Analysis", pull_through_result)
 
+    print("Running internal comms evaluation...")
+    internal_comms_result = run_internal_comms_eval(
+        data_dir / "eval_internal_comms_labeled.json",
+    )
+    print_report("Internal Comms — Draft & Review", internal_comms_result)
+
     # Save results
     output_dir = Path(__file__).resolve().parents[1] / "outputs"
     output_dir.mkdir(exist_ok=True)
@@ -244,6 +323,7 @@ if __name__ == "__main__":
                 "article_eval": article_result["metrics"],
                 "event_eval": event_result["metrics"],
                 "pull_through_eval": pull_through_result["metrics"],
+                "internal_comms_eval": internal_comms_result["metrics"],
             },
             f,
             indent=2,

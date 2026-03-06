@@ -1,0 +1,76 @@
+[
+  {
+    "content_type": "all_hands",
+    "subject": "Q1 2026 Update",
+    "author": "Dario Amodei",
+    "audience": "All Anthropic employees",
+    "tone": "optimistic but grounded",
+    "key_points": [
+      "Claude Enterprise crossed 500 customers",
+      "Responsible Scaling Policy v3 published",
+      "FTC inquiry ongoing"
+    ],
+    "sensitive_topics": [
+      "FTC investigation — do not speculate on outcomes",
+      "Avoid disparaging competitors"
+    ],
+    "context": "Strong product momentum but regulatory uncertainty.",
+    "distribution_channels": ["slack"],
+    "labels": {
+      "expected_recommendation": ["approve", "revise"],
+      "min_tone_score": 5,
+      "min_clarity_score": 5,
+      "min_alignment_score": 6,
+      "should_flag_sensitivity": false
+    }
+  },
+  {
+    "content_type": "faq",
+    "subject": "FTC Investigation FAQ",
+    "author": "Legal & Communications",
+    "audience": "All Anthropic employees",
+    "tone": "calm, factual, reassuring without dismissing concerns",
+    "key_points": [
+      "FTC has opened an inquiry into AI data practices across the industry",
+      "Anthropic is cooperating fully and transparently",
+      "No current impact on day-to-day operations",
+      "Employees should direct press inquiries to Comms team"
+    ],
+    "sensitive_topics": [
+      "Do not speculate on investigation outcomes or timeline",
+      "Do not discuss specific data practices under review",
+      "Do not compare our practices to competitors"
+    ],
+    "context": "Employees are anxious after news coverage of the FTC inquiry. This FAQ aims to address concerns directly.",
+    "distribution_channels": ["email"],
+    "labels": {
+      "expected_recommendation": ["approve", "revise", "escalate"],
+      "min_tone_score": 6,
+      "min_clarity_score": 6,
+      "min_alignment_score": 5,
+      "should_flag_sensitivity": true
+    }
+  },
+  {
+    "content_type": "leadership_message",
+    "subject": "Welcome to New Team Members — March Cohort",
+    "author": "Head of People",
+    "audience": "All Anthropic employees",
+    "tone": "warm, welcoming, energetic",
+    "key_points": [
+      "45 new team members joining in March across engineering, policy, and sales",
+      "Buddy program available for onboarding support",
+      "First all-hands for new cohort on March 15"
+    ],
+    "sensitive_topics": [],
+    "context": "Routine monthly welcome message. No sensitive topics.",
+    "distribution_channels": ["slack"],
+    "labels": {
+      "expected_recommendation": ["approve"],
+      "min_tone_score": 6,
+      "min_clarity_score": 6,
+      "min_alignment_score": 6,
+      "should_flag_sensitivity": false
+    }
+  }
+]

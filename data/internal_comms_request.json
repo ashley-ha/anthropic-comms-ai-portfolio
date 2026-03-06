@@ -1,0 +1,21 @@
+{
+  "content_type": "all_hands",
+  "subject": "Anthropic Q1 2026 Update and Claude Enterprise Milestones",
+  "author": "Dario Amodei",
+  "audience": "All Anthropic employees",
+  "tone": "optimistic but grounded, transparent about challenges",
+  "key_points": [
+    "Claude Enterprise adoption crossed 500 enterprise customers in Q1",
+    "Responsible Scaling Policy v3 published with concrete safety benchmarks",
+    "Three new research papers accepted at ICML 2026",
+    "Headcount grew 30% — onboarding improvements needed",
+    "FTC inquiry is ongoing; legal team is cooperating fully"
+  ],
+  "sensitive_topics": [
+    "FTC investigation — must not speculate on outcomes or assign blame",
+    "Competitive positioning — avoid disparaging competitors by name",
+    "Headcount growth — acknowledge growing pains without alarming anyone"
+  ],
+  "context": "This all-hands update covers Q1 2026 results. The team is energized by product momentum but anxious about the FTC inquiry and rapid scaling challenges. Leadership wants to be transparent about difficulties while maintaining confidence in the company's direction.",
+  "distribution_channels": ["slack", "email"]
+}

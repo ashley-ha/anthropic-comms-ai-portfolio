@@ -1,0 +1,18 @@
+name: internal_comms_baseline
+owner: comms-ops
+metrics:
+  - recommendation_accuracy
+  - tone_floor_pass_rate
+  - clarity_floor_pass_rate
+  - alignment_floor_pass_rate
+  - sensitivity_detection_accuracy
+thresholds:
+  recommendation_accuracy: 0.75
+  tone_floor_pass_rate: 0.9
+  clarity_floor_pass_rate: 0.9
+  alignment_floor_pass_rate: 0.8
+  sensitivity_detection_accuracy: 0.75
+failure_cases:
+  - sensitive_content_approved_without_flags
+  - benign_content_escalated_unnecessarily
+  - key_points_omitted_from_draft
