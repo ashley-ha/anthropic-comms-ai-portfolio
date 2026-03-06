@@ -1,5 +1,7 @@
 # ABOUTME: Python dependencies for the comms AI portfolio project.
-# ABOUTME: Includes Anthropic SDK for Claude-powered workflows.
+# ABOUTME: Includes Anthropic SDK for Claude-powered workflows and RSS fetching for live data.
 anthropic>=0.42.0
 python-dotenv>=1.0.0
 pyyaml>=6.0
+feedparser>=6.0.0
+httpx>=0.27.0

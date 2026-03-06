@@ -19,10 +19,20 @@ if __name__ == "__main__":
     root = Path(__file__).resolve().parents[1]
     threshold = int(os.getenv("DIGEST_RELEVANCE_THRESHOLD", "6"))
 
-    print(f"Building press digest (threshold={threshold})...")
+    live = "--live" in sys.argv
+    if live:
+        input_path = root / "data" / "live_articles.json"
+        if not input_path.exists():
+            print("No live articles found. Run `python scripts/run_fetch_articles.py` first.")
+            sys.exit(1)
+        print(f"Building press digest from LIVE articles (threshold={threshold})...")
+    else:
+        input_path = root / "data" / "mock_articles.json"
+        print(f"Building press digest (threshold={threshold})...")
+
     output_path = root / "outputs" / "press_digest.md"
     summary = build_digest(
-        input_path=root / "data" / "mock_articles.json",
+        input_path=input_path,
         output_path=output_path,
         threshold=threshold,
     )
