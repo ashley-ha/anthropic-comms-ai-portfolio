@@ -1,0 +1,13 @@
+name: rapid_response_baseline
+owner: comms-ops
+metrics:
+  - priority_tier_accuracy
+  - routing_accuracy
+  - p0_false_positive_rate
+thresholds:
+  priority_tier_accuracy: 0.85
+  routing_accuracy: 0.95
+  p0_false_positive_rate: 0.15
+failure_cases:
+  - social_noise_over_escalation
+  - regulatory_signal_under_escalation

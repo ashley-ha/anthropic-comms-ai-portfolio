@@ -1,0 +1,13 @@
+name: press_digest_baseline
+owner: comms-ops
+metrics:
+  - precision_at_10
+  - topic_label_accuracy
+  - sentiment_label_accuracy
+thresholds:
+  precision_at_10: 0.8
+  topic_label_accuracy: 0.75
+  sentiment_label_accuracy: 0.7
+failure_cases:
+  - generic_ai_news_false_positive
+  - policy_story_false_negative

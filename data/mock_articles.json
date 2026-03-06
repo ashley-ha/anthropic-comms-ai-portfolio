@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Anthropic expands enterprise Claude integrations for regulated teams",
+    "body": "The model release highlights stronger governance controls and policy-ready workflows for large organizations.",
+    "source": "TechLedger",
+    "url": "https://example.com/enterprise-claude",
+    "published_at": "2026-03-01T08:00:00Z"
+  },
+  {
+    "title": "Industry panel debates AI safety and regulation momentum",
+    "body": "Policy experts discussed AI safety evaluation standards and future regulation timelines.",
+    "source": "PolicyWire",
+    "url": "https://example.com/policy-panel",
+    "published_at": "2026-03-01T09:00:00Z"
+  },
+  {
+    "title": "Quarterly cloud earnings report",
+    "body": "General market commentary with no major impact on Anthropic strategy.",
+    "source": "MarketNow",
+    "url": "https://example.com/cloud-earnings",
+    "published_at": "2026-03-01T10:00:00Z"
+  },
+  {
+    "title": "Analysts note strong adoption for Claude API in customer support",
+    "body": "Report cites positive enterprise adoption and partnership activity.",
+    "source": "AnalystBrief",
+    "url": "https://example.com/claude-adoption",
+    "published_at": "2026-03-01T11:00:00Z"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "event_id": "evt-001",
+    "summary": "Viral criticism emerges after misinformation thread cites incorrect model behavior claims.",
+    "source": "social-monitor",
+    "timestamp": "2026-03-01T12:00:00Z"
+  },
+  {
+    "event_id": "evt-002",
+    "summary": "Regulator inquiry mentions potential AI safety incident in public testimony.",
+    "source": "policy-monitor",
+    "timestamp": "2026-03-01T12:15:00Z"
+  },
+  {
+    "event_id": "evt-003",
+    "summary": "Competitor launch announcement receives neutral analyst reaction.",
+    "source": "news-monitor",
+    "timestamp": "2026-03-01T12:30:00Z"
+  }
+]
