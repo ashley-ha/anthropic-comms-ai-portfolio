@@ -34,16 +34,16 @@ This project is built to show evidence across four operating pillars:
 
 ```mermaid
 flowchart LR
-  A[Coverage/Event Sources\n(API, RSS, Webhooks)] --> B[Ingestion Layer]
-  B --> C[Normalization]
-  C --> D[Scoring + Classification]
+  A["Coverage and Event Sources<br/>API, RSS, Webhooks"] --> B["Ingestion Layer"]
+  B --> C["Normalization"]
+  C --> D["Scoring and Classification"]
   D --> E{Workflow}
-  E -->|Press Digest| F[Daily Brief Builder]
-  E -->|Rapid Response| G[Alert Router]
-  F --> H[Slack/Email Digest]
-  G --> I[Escalation Channels]
-  D --> J[Metrics + Evals]
-  J --> K[Playbook + Training Updates]
+  E -->|Press Digest| F["Daily Brief Builder"]
+  E -->|Rapid Response| G["Alert Router"]
+  F --> H["Slack and Email Digest"]
+  G --> I["Escalation Channels"]
+  D --> J["Metrics and Evals"]
+  J --> K["Playbook and Training Updates"]
 ```
 
 ## Quickstart
