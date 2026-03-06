@@ -1,0 +1,104 @@
+[
+  {
+    "title": "Anthropic expands Claude enterprise tier with SOC 2 compliance and admin controls",
+    "body": "Anthropic announced a major update to its enterprise offering, adding SOC 2 Type II certification, granular admin controls, and SSO integration. The move positions Claude as a serious contender for regulated industries including healthcare and financial services. CTO of a Fortune 500 bank was quoted saying the compliance features 'remove the last barrier to adoption.' Anthropic's safety-first approach continues to differentiate it from competitors.",
+    "source": "TechCrunch",
+    "url": "https://example.com/anthropic-enterprise",
+    "published_at": "2026-03-05T08:00:00Z",
+    "labels": {
+      "overall_score_range": [50, 85],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["paraphrased", "thematic"]},
+        "enterprise-trust": {"match_types": ["verbatim", "paraphrased"]},
+        "responsible-scaling": {"match_types": ["absent", "thematic"]},
+        "beneficial-competition": {"match_types": ["thematic", "absent"]},
+        "transparency-commitment": {"match_types": ["absent"]}
+      }
+    }
+  },
+  {
+    "title": "AI safety is a marketing strategy, not serious research",
+    "body": "A growing chorus of critics argues that companies like Anthropic use 'safety' primarily as a brand differentiator rather than a genuine research priority. Former employees describe a culture where safety publications serve the marketing team more than the research team. 'They call themselves safety leaders, but their real goal is market positioning,' said one ex-researcher. Anthropic's responsible scaling policy has been dismissed by multiple AI researchers as vague and unenforceable. The company continues to aggressively pursue enterprise deals while claiming to prioritize caution.",
+    "source": "New York Times",
+    "url": "https://example.com/nyt-safety-marketing",
+    "published_at": "2026-03-05T15:00:00Z",
+    "labels": {
+      "overall_score_range": [0, 25],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["distorted"]},
+        "enterprise-trust": {"match_types": ["thematic", "distorted"]},
+        "responsible-scaling": {"match_types": ["distorted"]},
+        "beneficial-competition": {"match_types": ["absent"]},
+        "transparency-commitment": {"match_types": ["absent"]}
+      }
+    }
+  },
+  {
+    "title": "Kaiser Permanente deploys Claude for clinical documentation",
+    "body": "Kaiser Permanente announced a pilot program using Claude to assist physicians with clinical documentation, reducing time spent on notes by an estimated 40%. The deployment includes human-in-the-loop review for all AI-generated content. Anthropic worked closely with Kaiser's compliance team to meet HIPAA requirements. 'We chose Claude because Anthropic's safety-first approach makes it the most trustworthy AI for healthcare,' said Kaiser's CTO.",
+    "source": "STAT News",
+    "url": "https://example.com/kaiser-claude-pilot",
+    "published_at": "2026-03-05T14:00:00Z",
+    "labels": {
+      "overall_score_range": [55, 90],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["paraphrased", "thematic"]},
+        "enterprise-trust": {"match_types": ["verbatim", "paraphrased"]},
+        "responsible-scaling": {"match_types": ["absent", "thematic"]},
+        "beneficial-competition": {"match_types": ["absent"]},
+        "transparency-commitment": {"match_types": ["absent", "thematic"]}
+      }
+    }
+  },
+  {
+    "title": "Tesla announces fully autonomous rideshare service in three cities",
+    "body": "Tesla launched its autonomous rideshare service in San Francisco, Los Angeles, and Miami, competing directly with Waymo. The service uses Tesla's FSD v13 system. Early reviews are mixed, with some riders reporting uncomfortable lane changes and one minor fender bender. The launch is unrelated to AI language model competition.",
+    "source": "Wired",
+    "url": "https://example.com/tesla-rideshare",
+    "published_at": "2026-03-04T14:00:00Z",
+    "labels": {
+      "overall_score_range": [0, 10],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["absent"]},
+        "enterprise-trust": {"match_types": ["absent"]},
+        "responsible-scaling": {"match_types": ["absent"]},
+        "beneficial-competition": {"match_types": ["absent"]},
+        "transparency-commitment": {"match_types": ["absent"]}
+      }
+    }
+  },
+  {
+    "title": "Anthropic's Dario Amodei publishes essay on responsible scaling",
+    "body": "Anthropic CEO Dario Amodei published a detailed essay outlining the company's approach to responsible scaling, including new commitments around pre-deployment testing and red-teaming for Claude models. The essay acknowledges tensions between safety and speed, arguing that 'the companies best positioned to lead on safety are those actually building the technology.' Commentary from the AI safety community has been largely positive.",
+    "source": "Anthropic Blog",
+    "url": "https://example.com/amodei-responsible-scaling",
+    "published_at": "2026-03-05T12:00:00Z",
+    "labels": {
+      "overall_score_range": [60, 95],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["paraphrased", "verbatim"]},
+        "enterprise-trust": {"match_types": ["absent", "thematic"]},
+        "responsible-scaling": {"match_types": ["verbatim", "paraphrased"]},
+        "beneficial-competition": {"match_types": ["absent", "thematic"]},
+        "transparency-commitment": {"match_types": ["paraphrased", "thematic"]}
+      }
+    }
+  },
+  {
+    "title": "New benchmark shows Claude outperforms competitors on safety evaluations",
+    "body": "Researchers at the Center for AI Safety released a new benchmark measuring AI model refusal of harmful requests, jailbreak resistance, and output honesty. Claude scored highest overall, with particularly strong performance on refusing to generate misleading content. The benchmark has been endorsed by NIST as a reference evaluation.",
+    "source": "VentureBeat",
+    "url": "https://example.com/claude-safety-benchmark",
+    "published_at": "2026-03-04T17:00:00Z",
+    "labels": {
+      "overall_score_range": [45, 80],
+      "expected_matches": {
+        "safety-leadership": {"match_types": ["paraphrased", "verbatim"]},
+        "enterprise-trust": {"match_types": ["thematic", "absent"]},
+        "responsible-scaling": {"match_types": ["absent", "thematic"]},
+        "beneficial-competition": {"match_types": ["thematic", "absent"]},
+        "transparency-commitment": {"match_types": ["thematic", "paraphrased"]}
+      }
+    }
+  }
+]

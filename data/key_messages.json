@@ -1,0 +1,65 @@
+{
+  "framework_name": "Anthropic Core Narratives — Q1 2026",
+  "last_updated": "2026-03-01",
+  "messages": [
+    {
+      "id": "safety-leadership",
+      "narrative": "Anthropic is the industry leader in AI safety — safety and capability reinforce each other, they are not trade-offs.",
+      "pillar": "Safety",
+      "priority": "primary",
+      "proof_points": [
+        "Constitutional AI methodology",
+        "Responsible Scaling Policy",
+        "NIST-endorsed safety benchmark results",
+        "Pre-deployment red-teaming commitments"
+      ]
+    },
+    {
+      "id": "enterprise-trust",
+      "narrative": "Regulated industries choose Claude because Anthropic's safety-first approach makes it the most trustworthy AI for high-stakes environments.",
+      "pillar": "Product",
+      "priority": "primary",
+      "proof_points": [
+        "SOC 2 Type II certification",
+        "Kaiser Permanente clinical deployment",
+        "Brazil education ministry contract",
+        "HIPAA-compliant architecture"
+      ]
+    },
+    {
+      "id": "responsible-scaling",
+      "narrative": "Anthropic welcomes regulation that raises the bar for the entire industry and is already aligned with frameworks like the EU AI Act.",
+      "pillar": "Policy",
+      "priority": "primary",
+      "proof_points": [
+        "Dario Amodei responsible scaling essay",
+        "Voluntary White House commitments",
+        "EU AI Act early compliance",
+        "Government affairs team investment"
+      ]
+    },
+    {
+      "id": "beneficial-competition",
+      "narrative": "Competition in AI makes the whole field better — Anthropic is focused on building the most reliable, steerable AI rather than winning benchmark races.",
+      "pillar": "Business",
+      "priority": "secondary",
+      "proof_points": [
+        "Differentiation on safety rather than speed",
+        "Focus on instruction-following and steerability",
+        "Enterprise customer retention rates"
+      ]
+    },
+    {
+      "id": "transparency-commitment",
+      "narrative": "Anthropic is committed to transparency about AI capabilities, limitations, and risks — including publishing research that may not favor the company.",
+      "pillar": "Safety",
+      "priority": "secondary",
+      "proof_points": [
+        "Public research papers on model limitations",
+        "Interpretability research program",
+        "Open safety evaluations",
+        "Honest acknowledgment of dual-use risks"
+      ]
+    }
+  ]
+}

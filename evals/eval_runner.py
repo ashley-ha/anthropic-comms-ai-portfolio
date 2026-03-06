@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-from comms_ai_portfolio.claude_client import analyze_article, assess_event
+from comms_ai_portfolio.claude_client import analyze_article, analyze_pull_through, assess_event
 
 
 def run_article_eval(data_path: Path) -> dict[str, Any]:
@@ -120,6 +120,68 @@ def run_event_eval(data_path: Path) -> dict[str, Any]:
     return {"metrics": metrics, "details": results}
 
 
+def run_pull_through_eval(data_path: Path, messages_path: Path) -> dict[str, Any]:
+    """Evaluate Claude's pull-through analysis against human labels.
+
+    Metrics:
+    - score_range_accuracy: % of articles where overall_score falls within labeled range
+    - match_type_accuracy: % of message matches where match_type is in the expected set
+    - distortion_detection_recall: % of labeled distortions correctly identified
+    """
+    with data_path.open("r", encoding="utf-8") as f:
+        articles = json.load(f)
+    with messages_path.open("r", encoding="utf-8") as f:
+        framework = json.load(f)
+
+    key_messages = framework["messages"]
+    results = []
+
+    for article in articles:
+        labels = article.pop("labels")
+        analysis = analyze_pull_through(article, key_messages)
+        results.append({
+            "title": article["title"],
+            "predicted": analysis,
+            "labeled": labels,
+        })
+
+    # Score range accuracy
+    score_in_range = sum(
+        1 for r in results
+        if r["labeled"]["overall_score_range"][0] <= r["predicted"]["overall_score"] <= r["labeled"]["overall_score_range"][1]
+    )
+
+    # Match type accuracy
+    match_correct = 0
+    match_total = 0
+    distortion_expected = 0
+    distortion_detected = 0
+
+    for r in results:
+        expected_matches = r["labeled"]["expected_matches"]
+        for m in r["predicted"].get("matches", []):
+            msg_id = m["message_id"]
+            if msg_id in expected_matches:
+                match_total += 1
+                if m["match_type"] in expected_matches[msg_id]["match_types"]:
+                    match_correct += 1
+                # Track distortion recall
+                if "distorted" in expected_matches[msg_id]["match_types"]:
+                    distortion_expected += 1
+                    if m["match_type"] == "distorted":
+                        distortion_detected += 1
+
+    n = len(results)
+    metrics = {
+        "total_articles": n,
+        "score_range_accuracy": round(score_in_range / n, 3) if n else 0,
+        "match_type_accuracy": round(match_correct / match_total, 3) if match_total else 0,
+        "distortion_detection_recall": round(distortion_detected / distortion_expected, 3) if distortion_expected else 0,
+    }
+
+    return {"metrics": metrics, "details": results}
+
+
 def print_report(name: str, result: dict[str, Any]) -> None:
     """Pretty-print an eval report to stdout."""
     print(f"\n{'=' * 60}")
@@ -135,14 +197,20 @@ def print_report(name: str, result: dict[str, Any]) -> None:
 
     print(f"\n  Details:")
     for detail in result["details"]:
-        if "title" in detail:
+        if "title" in detail and "predicted" in detail and "labeled" in detail:
             pred = detail["predicted"]
             lab = detail["labeled"]
-            match = "PASS" if abs(pred["relevance_score"] - lab["relevance_score"]) <= 2 else "FAIL"
-            print(f"    [{match}] {detail['title'][:50]}...")
-            print(f"          predicted: rel={pred['relevance_score']} topic={pred['topic']} sent={pred['sentiment']}")
-            print(f"          labeled:   rel={lab['relevance_score']} topic={lab['topic']} sent={lab['sentiment']}")
-        else:
+            if "relevance_score" in pred:
+                match = "PASS" if abs(pred["relevance_score"] - lab["relevance_score"]) <= 2 else "FAIL"
+                print(f"    [{match}] {detail['title'][:50]}...")
+                print(f"          predicted: rel={pred['relevance_score']} topic={pred['topic']} sent={pred['sentiment']}")
+                print(f"          labeled:   rel={lab['relevance_score']} topic={lab['topic']} sent={lab['sentiment']}")
+            elif "overall_score" in pred:
+                lo, hi = lab["overall_score_range"]
+                match = "PASS" if lo <= pred["overall_score"] <= hi else "FAIL"
+                print(f"    [{match}] {detail['title'][:50]}...")
+                print(f"          predicted: score={pred['overall_score']}% (expected {lo}-{hi}%)")
+        elif "event_id" in detail:
             match = "PASS" if detail["predicted_tier"] == detail["labeled_tier"] else "FAIL"
             print(f"    [{match}] {detail['event_id']}: predicted={detail['predicted_tier']} labeled={detail['labeled_tier']}")
 
@@ -160,6 +228,13 @@ if __name__ == "__main__":
     event_result = run_event_eval(data_dir / "eval_events_labeled.json")
     print_report("Rapid Response — Event Triage", event_result)
 
+    print("Running pull-through evaluation...")
+    pull_through_result = run_pull_through_eval(
+        data_dir / "eval_pull_through_labeled.json",
+        data_dir / "key_messages.json",
+    )
+    print_report("Pull-Through Tracker — Message Analysis", pull_through_result)
+
     # Save results
     output_dir = Path(__file__).resolve().parents[1] / "outputs"
     output_dir.mkdir(exist_ok=True)
@@ -168,6 +243,7 @@ if __name__ == "__main__":
             {
                 "article_eval": article_result["metrics"],
                 "event_eval": event_result["metrics"],
+                "pull_through_eval": pull_through_result["metrics"],
             },
             f,
             indent=2,

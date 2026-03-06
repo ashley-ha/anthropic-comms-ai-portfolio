@@ -1,0 +1,14 @@
+name: pull_through_baseline
+owner: comms-ops
+metrics:
+  - score_range_accuracy
+  - match_type_accuracy
+  - distortion_detection_recall
+thresholds:
+  score_range_accuracy: 0.8
+  match_type_accuracy: 0.65
+  distortion_detection_recall: 0.75
+failure_cases:
+  - distortion_missed_as_thematic
+  - irrelevant_article_scored_high
+  - verbatim_scored_as_absent

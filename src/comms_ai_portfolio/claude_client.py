@@ -187,6 +187,140 @@ def assess_event(event: dict[str, str], retries: int = 2) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Pull-through analysis: message reflection in earned media
+# ---------------------------------------------------------------------------
+
+PULL_THROUGH_TOOL = {
+    "name": "record_pull_through_analysis",
+    "description": "Record how well an article reflects Anthropic's key messages.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "overall_score": {
+                "type": "integer",
+                "description": "0-100 overall pull-through percentage. 100 = every key message faithfully reflected; 0 = no messages present.",
+            },
+            "matches": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "message_id": {
+                            "type": "string",
+                            "description": "ID of the key message being evaluated.",
+                        },
+                        "match_type": {
+                            "type": "string",
+                            "enum": ["verbatim", "paraphrased", "thematic", "distorted", "absent"],
+                            "description": "How the message appeared: verbatim (direct quote), paraphrased (same meaning, different words), thematic (general alignment), distorted (twisted or misrepresented), absent (not present).",
+                        },
+                        "confidence": {
+                            "type": "integer",
+                            "description": "1-10 confidence in this match assessment.",
+                        },
+                        "evidence": {
+                            "type": "string",
+                            "description": "Direct quote or passage from the article supporting this assessment. Use empty string if absent.",
+                        },
+                        "distortion_note": {
+                            "type": "string",
+                            "description": "If match_type is 'distorted', explain what was changed or misrepresented. Empty string otherwise.",
+                        },
+                    },
+                    "required": ["message_id", "match_type", "confidence", "evidence", "distortion_note"],
+                },
+                "description": "Assessment for each key message.",
+            },
+            "narrative_gaps": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Key messages that were completely absent and represent missed opportunities.",
+            },
+            "summary": {
+                "type": "string",
+                "description": "2-3 sentence summary of how well this article serves Anthropic's messaging goals.",
+            },
+        },
+        "required": ["overall_score", "matches", "narrative_gaps", "summary"],
+    },
+}
+
+PULL_THROUGH_SYSTEM_PROMPT = """You are a communications analyst measuring message pull-through in earned media coverage about Anthropic.
+
+"Message pull-through" means: did the journalist reflect Anthropic's intended key messages in their reporting? This is a core PR effectiveness metric.
+
+For each article, you will be given Anthropic's key messaging framework and the article text. Your job is to assess each key message:
+
+Match types:
+- verbatim: The article directly quotes or very closely mirrors the key message language.
+- paraphrased: The article conveys the same meaning using different words.
+- thematic: The article's framing generally aligns with the narrative direction, but doesn't specifically convey the message.
+- distorted: The article references the narrative but twists, undermines, or misrepresents it. THIS IS IMPORTANT TO FLAG.
+- absent: The message is not reflected in the article at all.
+
+Scoring guidelines:
+- overall_score represents what percentage of the messaging framework was effectively reflected.
+- A "verbatim" or "paraphrased" match on a primary message contributes more than a "thematic" match on a secondary message.
+- Distorted messages should REDUCE the overall score — a twisted message is worse than an absent one.
+- Articles not about Anthropic will naturally have low scores; that's expected, not a failure.
+
+Be rigorous. Comms teams use this data to refine their media strategy."""
+
+
+def analyze_pull_through(
+    article: dict[str, str],
+    key_messages: list[dict[str, str]],
+    retries: int = 2,
+) -> dict[str, Any]:
+    """Analyze how well an article reflects Anthropic's key messages."""
+    messages_text = "\n".join(
+        f"- [{m['id']}] ({m['priority']}) {m['narrative']}"
+        for m in key_messages
+    )
+
+    client = get_client()
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=1000,
+                system=PULL_THROUGH_SYSTEM_PROMPT,
+                tools=[PULL_THROUGH_TOOL],
+                tool_choice={"type": "tool", "name": "record_pull_through_analysis"},
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"""Analyze this article for message pull-through:
+
+Title: {article['title']}
+Source: {article['source']}
+Published: {article['published_at']}
+
+Body:
+{article['body']}
+
+---
+
+KEY MESSAGING FRAMEWORK:
+{messages_text}""",
+                    }
+                ],
+            )
+            for block in message.content:
+                if block.type == "tool_use":
+                    return block.input
+            raise RuntimeError("Claude did not return a tool_use block for pull-through analysis")
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error analyzing pull-through for '%s' (attempt %d): %s", article.get("title", "?"), attempt + 1, e)
+                continue
+            raise
+    raise last_err
+
+
+# ---------------------------------------------------------------------------
 # Briefing generation: spokesperson prep document
 # ---------------------------------------------------------------------------
 
