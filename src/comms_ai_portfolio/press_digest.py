@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
 from .claude_client import analyze_article
+
+logger = logging.getLogger(__name__)
+
+MAX_WORKERS = 5
 
 
 def build_digest(
@@ -18,7 +24,8 @@ def build_digest(
     """Build a daily press digest by analyzing articles with Claude.
 
     Each article is sent to Claude for relevance scoring, topic classification,
-    sentiment analysis, and a rationale for inclusion/exclusion.
+    sentiment analysis, and a rationale for inclusion/exclusion. Articles are
+    analyzed in parallel for faster throughput.
 
     Args:
         input_path: Path to JSON file containing article objects.
@@ -33,15 +40,27 @@ def build_digest(
 
     analyzed: list[dict[str, Any]] = []
     filtered_count = 0
+    error_count = 0
 
-    for raw in articles:
-        analysis = analyze_article(raw)
-        entry = {**raw, **analysis}
+    def _analyze_one(raw: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        try:
+            return raw, analyze_article(raw)
+        except Exception as e:
+            logger.error("Failed to analyze '%s': %s", raw.get("title", "?"), e)
+            return raw, None
 
-        if analysis["relevance_score"] >= threshold:
-            analyzed.append(entry)
-        else:
-            filtered_count += 1
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = [pool.submit(_analyze_one, raw) for raw in articles]
+        for future in as_completed(futures):
+            raw, analysis = future.result()
+            if analysis is None:
+                error_count += 1
+                continue
+            entry = {**raw, **analysis}
+            if analysis["relevance_score"] >= threshold:
+                analyzed.append(entry)
+            else:
+                filtered_count += 1
 
     analyzed.sort(key=lambda a: a["relevance_score"], reverse=True)
 
@@ -58,6 +77,7 @@ def build_digest(
     return {
         "selected_count": len(analyzed),
         "filtered_count": filtered_count,
+        "error_count": error_count,
         "topic_mix": dict(topic_counts),
         "sentiment_mix": dict(sentiment_counts),
     }

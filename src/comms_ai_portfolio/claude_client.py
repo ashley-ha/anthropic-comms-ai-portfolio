@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
 
 import anthropic
+
+logger = logging.getLogger(__name__)
 
 _client: anthropic.Anthropic | None = None
 
@@ -72,26 +75,36 @@ Score relevance 1-10 where:
 - 1-2: Irrelevant to Anthropic's communications needs"""
 
 
-def analyze_article(article: dict[str, str]) -> dict[str, Any]:
+def analyze_article(article: dict[str, str], retries: int = 2) -> dict[str, Any]:
     """Analyze a single article for relevance, topic, sentiment, and rationale."""
     client = get_client()
-    message = client.messages.create(
-        model=get_model(),
-        max_tokens=300,
-        system=ARTICLE_SYSTEM_PROMPT,
-        tools=[ARTICLE_ANALYSIS_TOOL],
-        tool_choice={"type": "tool", "name": "record_article_analysis"},
-        messages=[
-            {
-                "role": "user",
-                "content": f"Analyze this article:\n\nTitle: {article['title']}\nSource: {article['source']}\nPublished: {article['published_at']}\n\nBody:\n{article['body']}",
-            }
-        ],
-    )
-    for block in message.content:
-        if block.type == "tool_use":
-            return block.input
-    raise RuntimeError("Claude did not return a tool_use block for article analysis")
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=300,
+                system=ARTICLE_SYSTEM_PROMPT,
+                tools=[ARTICLE_ANALYSIS_TOOL],
+                tool_choice={"type": "tool", "name": "record_article_analysis"},
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Analyze this article:\n\nTitle: {article['title']}\nSource: {article['source']}\nPublished: {article['published_at']}\n\nBody:\n{article['body']}",
+                    }
+                ],
+            )
+            for block in message.content:
+                if block.type == "tool_use":
+                    return block.input
+            raise RuntimeError("Claude did not return a tool_use block for article analysis")
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error analyzing '%s' (attempt %d): %s", article.get("title", "?"), attempt + 1, e)
+                continue
+            raise
+    raise last_err  # unreachable but satisfies type checker
 
 
 # ---------------------------------------------------------------------------
@@ -141,26 +154,36 @@ Tier definitions:
 When generating talking points, be specific to Anthropic's values: safety, transparency, beneficial AI, and responsible development. Never generate talking points that are dishonest or dismissive."""
 
 
-def assess_event(event: dict[str, str]) -> dict[str, Any]:
+def assess_event(event: dict[str, str], retries: int = 2) -> dict[str, Any]:
     """Assess an event for priority, tier, and generate talking points."""
     client = get_client()
-    message = client.messages.create(
-        model=get_model(),
-        max_tokens=500,
-        system=EVENT_SYSTEM_PROMPT,
-        tools=[EVENT_ASSESSMENT_TOOL],
-        tool_choice={"type": "tool", "name": "record_event_assessment"},
-        messages=[
-            {
-                "role": "user",
-                "content": f"Assess this event:\n\nEvent ID: {event['event_id']}\nSource: {event['source']}\nTimestamp: {event['timestamp']}\n\nSummary:\n{event['summary']}",
-            }
-        ],
-    )
-    for block in message.content:
-        if block.type == "tool_use":
-            return block.input
-    raise RuntimeError("Claude did not return a tool_use block for event assessment")
+    last_err: Exception | None = None
+    for attempt in range(1 + retries):
+        try:
+            message = client.messages.create(
+                model=get_model(),
+                max_tokens=500,
+                system=EVENT_SYSTEM_PROMPT,
+                tools=[EVENT_ASSESSMENT_TOOL],
+                tool_choice={"type": "tool", "name": "record_event_assessment"},
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Assess this event:\n\nEvent ID: {event['event_id']}\nSource: {event['source']}\nTimestamp: {event['timestamp']}\n\nSummary:\n{event['summary']}",
+                    }
+                ],
+            )
+            for block in message.content:
+                if block.type == "tool_use":
+                    return block.input
+            raise RuntimeError("Claude did not return a tool_use block for event assessment")
+        except anthropic.APIStatusError as e:
+            last_err = e
+            if attempt < retries and e.status_code in {429, 500, 502, 503, 529}:
+                logger.warning("Retryable error assessing '%s' (attempt %d): %s", event.get("event_id", "?"), attempt + 1, e)
+                continue
+            raise
+    raise last_err
 
 
 # ---------------------------------------------------------------------------
