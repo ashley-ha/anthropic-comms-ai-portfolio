@@ -91,7 +91,7 @@ python scripts/run_fetch_articles.py --limit 15   # pulls real articles from RSS
 ### 3. Run Press Digest
 
 ```bash
-python scripts/run_press_digest.py          # uses mock data
+python scripts/run_press_digest.py          # uses mock data for testing
 python scripts/run_press_digest.py --live   # uses live articles from step 2
 cat outputs/press_digest.md
 ```
@@ -113,7 +113,7 @@ cat outputs/briefing.md
 ### 6. Run Pull-Through Tracker
 
 ```bash
-python scripts/run_pull_through.py          # uses mock data
+python scripts/run_pull_through.py          # uses mock data for testing
 python scripts/run_pull_through.py --live   # uses live articles from step 2
 cat outputs/pull_through_report.md
 ```
@@ -262,7 +262,7 @@ Run `python evals/eval_runner.py` to generate a full report.
 
 ```
 .
-├── data/                         # Mock datasets + labeled eval data
+├── data/                         # datasets + labeled eval data
 │   ├── articles.json             # 18 sample press articles
 │   ├── events.json               # 8 sample communications events
 │   ├── briefing_request.json     # Sample briefing input
@@ -303,7 +303,7 @@ Run `python evals/eval_runner.py` to generate a full report.
 ## Safety
 
 - No embedded credentials or API keys
-- Mock/synthetic data included (safe for public sharing); live data fetched from public RSS feeds
+- some testing mock/synthetic data included (safe for public sharing); live data fetched from public RSS feeds
 - Configuration via `.env` file
 - System prompts designed to prevent generation of harmful or dishonest content
 - All Claude outputs marked as AI-generated recommendations requiring human review
